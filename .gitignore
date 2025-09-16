@@ -5,3 +5,4 @@ send_sheet.*
 app/constants.py
 **/*.env
 **/*.json
+**/*.pyc
