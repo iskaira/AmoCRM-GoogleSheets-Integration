@@ -71,5 +71,3 @@ async def add_or_update_lead(row_number, data):
         gservice.set_lead_status_for_row(row_number, lead_id=lead_id, status_id=lead['status_id'])
         logger.info(res)
     return lead_id
-
-

@@ -10,37 +10,39 @@ google_sheets_app = web.Application()
 
 async def handle_webhook(request: web.Request):
     data = await request.json()
-    logger.info(data)
-    logger.info(f"Получены данные из Google Sheets: {data}")
+    logger.info(f"Webhook data from Google Sheets: {data}")
 
     row_number = data.get("row")
     values = data.get("data", [])
-    user_data = {}
+    if not values or len(values) < 5:
+        return web.json_response({"status": "error", "reason": "invalid_data"})
+
     phone = values[0]
     email = values[1]
-    price = values[2] if values[2] else 0
+    price = values[2] or 0
     comment = values[3]
-    lead_id = str(values[4])
+    lead_id = str(values[4]) if values[4] is not None else ""
 
-    if phone and email and str(price).isdigit():
-        user_data = {
-            "phone": phone,
-            "email": email,
-            "price": price,
-            "comment": comment
-        }
-    logger.info(user_data)
-    if user_data:
-        logger.info(f"Data prepared for processing amocrm: {user_data}")
-        if await lead_cache.is_ignored(lead_id):
-            logger.info("Lead update from GS ignored, AMOCRM is Editing now")
-            return web.json_response({"status": "ok", "row": row_number})
-        await lead_cache.ignore(lead_id)
-        await add_or_update_lead(row_number, user_data)
-    else:
-        logger.error("Could not process data: required fields are missing or empty.")
+    if not (phone and email and str(price).isdigit()):
+        logger.error("Missing/invalid fields")
+        return web.json_response({"status": "error", "row": row_number})
 
-    return web.json_response({"status": "ok", "row": row_number})
+    user_data = {"phone": phone, "email": email, "price": int(price), "comment": comment, "lead_id": lead_id}
+
+    if await lead_cache.is_ignored(lead_id, "gsheets"):
+        logger.info(f"Lead {lead_id} ignored for gsheets (AMO action in progress)")
+        return web.json_response({"status": "ignored", "row": row_number})
+
+    await lead_cache.ignore(lead_id, "gsheets")
+
+    await request.app["lead_queue"].enqueue(
+        "gsheets",
+        row_number,
+        user_data,
+    )
+
+    logger.info(f"Lead {lead_id} enqueued (gsheets)")
+    return web.json_response({"status": "queued", "row": row_number})
 
 
 google_sheets_app.add_routes([web.post("/webhook", handle_webhook)])

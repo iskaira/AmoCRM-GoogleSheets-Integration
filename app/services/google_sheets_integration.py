@@ -32,4 +32,3 @@ class GoogleSheetsService:
             6: status_id,  # 6-я колонка status
         }
         self.client.update_cells(ws, row_number, updates)
-

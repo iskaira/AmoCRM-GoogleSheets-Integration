@@ -1,18 +1,19 @@
 class LeadIgnoreCache:
-    def __init__(self, redis_client, redis_key="ignore_leads", ttl=5):
+    def __init__(self, redis_client, ttl: int = 5):
         self.redis_client = redis_client
-        self.redis_key = redis_key
         self.ttl = ttl
 
-    async def is_ignored(self, lead_id):
-        lead_id = str(lead_id)
-        ignored = await self.redis_client.redis.sismember(self.redis_key, lead_id)
-        print(f"[is_ignored] lead_id={lead_id}, ignored={ignored}")
-        return ignored
+    def _make_key(self, lead_id: str | int, source: str) -> str:
+        return f"ignore:lead:{lead_id}:{source}"
 
-    async def ignore(self, lead_id):
-        lead_id = str(lead_id)
-        await self.redis_client.redis.sadd(self.redis_key, lead_id)
-        await self.redis_client.redis.expire(self.redis_key, self.ttl)
-        current = await self.redis_client.redis.smembers(self.redis_key)
-        print(f"[ignore] added lead_id={lead_id}, current set={current}")
+    async def ignore(self, lead_id: str | int, source: str):
+        key = self._make_key(lead_id, source)
+        await self.redis_client.redis.set(key, "1", ex=self.ttl)
+        print(f"[ignore] set {key}")
+
+    async def is_ignored(self, lead_id: str | int, source: str) -> bool:
+        opposite = "amocrm" if source == "gsheets" else "gsheets"
+        key = self._make_key(lead_id, opposite)
+        exists = await self.redis_client.redis.exists(key)
+        print(f"[is_ignored] lead_id={lead_id}, source={source}, opposite_key={key}, exists={exists}")
+        return bool(exists)

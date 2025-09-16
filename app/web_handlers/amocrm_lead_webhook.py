@@ -5,11 +5,10 @@ from multidict import MultiDictProxy
 from app.cache.global_cache import lead_cache
 from app.constants import amocrm_subdomain, GOOGLE_SHEET_ID, GOOGLE_WORKSHEET_NAME
 from app.external_api.amo_crm import amo_custom_fields
-
-amocrm_lead_webhook_app = web.Application()
-
 from app.external_api.google_sheets import GoogleSheetsClient
 from app.services.google_sheets_integration import GoogleSheetsService
+
+amocrm_lead_webhook_app = web.Application()
 
 client = GoogleSheetsClient()
 gservice = GoogleSheetsService(client, GOOGLE_SHEET_ID, GOOGLE_WORKSHEET_NAME)
@@ -30,10 +29,10 @@ async def webhook(request: web.Request) -> web.Response:
         return web.Response(status=403)
     lead_id = multipart_data.get('leads[update][0][id]')
 
-    if await lead_cache.is_ignored(lead_id):
+    if await lead_cache.is_ignored(lead_id, "amocrm"):
         logger.info("Lead update from AMOCRM ignored, GS is Editing now")
         return web.Response()
-    await lead_cache.ignore(lead_id)
+    await lead_cache.ignore(lead_id, "amocrm")
     status_id = multipart_data.get('leads[update][0][status_id]')
     price = multipart_data.get('leads[update][0][price]')
     lead_data = {

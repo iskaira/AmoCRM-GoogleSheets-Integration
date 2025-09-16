@@ -26,6 +26,7 @@ class CustomFieldEnums:
 
 async def compare_email(custom_fields, email):
     correct_email_found = False
+    email = str(email)
     if custom_fields:
         for field in custom_fields:
             if field.get('field_id') == amo_custom_fields.get("Email"):
