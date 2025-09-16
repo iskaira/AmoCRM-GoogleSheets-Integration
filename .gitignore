@@ -2,7 +2,6 @@
 .idea/
 venv
 venv/
-send_sheet.*
 app/constants.py
 **/*.env
 **/*.json
