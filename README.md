@@ -26,3 +26,7 @@ aiohttp — веб-сервер для обработки webhook’ов.
 Redis — кеш (singleton) для всех sub-apps, предотвращение повторных вызовов.
 pygsheets — интеграция с Google Sheets API для чтения и записи данных.
 Google Apps Script — триггер onEdit, который отправляет данные на твой webhook при изменениях в таблице.
+
+---
+DEMO - https://youtu.be/61ocOA6kuIc
+---
